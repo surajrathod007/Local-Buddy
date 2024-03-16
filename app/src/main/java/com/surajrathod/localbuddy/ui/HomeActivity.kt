@@ -32,6 +32,7 @@ class HomeActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
     private var folderUri: Uri? = null
 
+    private var buddyServer: BuddyServer? = null
 
     private val directoryPickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -107,24 +108,23 @@ class HomeActivity : AppCompatActivity() {
 
 
     private fun startServer() {
-
-
-        val networkInterfaces = NetworkInterface.getNetworkInterfaces()
-        while (networkInterfaces.hasMoreElements()) {
-            val nextElement = networkInterfaces.nextElement()
-            if (nextElement.isUp) {
-                logE("SURAJNETWORKIF", "${getLocalIpAddress()}")
+        if (folderUri != null) {
+            buddyServer?.stop()
+            buddyServer = BuddyServer(8900, getLocalIpAddress(), this, folderUri!!)
+            try {
+                buddyServer?.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
+                logE(
+                    TAG,
+                    "Server started at http://${buddyServer?.hostname}:${buddyServer?.listeningPort}"
+                )
+                logE(TAG, "Listening port : ${buddyServer?.listeningPort}")
+                binding.txtLblServerUrl.text =
+                    "http://${getLocalIpAddress()}:${buddyServer?.listeningPort}/home"
+            } catch (e: IOException) {
+                logE(TAG, "Error starting server: ${e.message}")
             }
-        }
-
-        val server = BuddyServer(8900, getLocalIpAddress(), this, folderUri!!)
-        try {
-            server.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
-            logE(TAG, "Server started at http://${server.hostname}:${server.listeningPort}")
-            logE(TAG, "Listening port : ${server.listeningPort}")
-            binding.txtLblServerUrl.text = "http://${getLocalIpAddress()}:${server.listeningPort}"
-        } catch (e: IOException) {
-            logE(TAG, "Error starting server: ${e.message}")
+        } else {
+            Toast.makeText(this, "Please select a directory first", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -133,7 +133,7 @@ class HomeActivity : AppCompatActivity() {
             val interfaces: Enumeration<NetworkInterface> = NetworkInterface.getNetworkInterfaces()
             while (interfaces.hasMoreElements()) {
                 val networkInterface: NetworkInterface = interfaces.nextElement()
-                val addresses: Enumeration<InetAddress> = networkInterface.getInetAddresses()
+                val addresses: Enumeration<InetAddress> = networkInterface.inetAddresses
                 while (addresses.hasMoreElements()) {
                     val address: InetAddress = addresses.nextElement()
                     if (!address.isLoopbackAddress && address.isSiteLocalAddress) {

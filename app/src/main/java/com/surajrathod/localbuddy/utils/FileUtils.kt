@@ -2,20 +2,13 @@ package com.surajrathod.localbuddy.utils
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
-import android.content.ContentUris
 import android.content.Context
-import android.database.Cursor
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
 import android.provider.DocumentsContract
-import android.provider.MediaStore
-import androidx.documentfile.provider.DocumentFile
 import com.surajrathod.localbuddy.extensions.logE
 import com.surajrathod.localbuddy.server.BuddyServer
 import com.surajrathod.localbuddy.server.FileItem
 import java.io.File
-import java.util.LinkedList
 
 
 // Convert bytes to kilobytes (KB)
@@ -39,12 +32,12 @@ fun MBToBytes(mb: Double): Long {
 }
 
 
-
 @SuppressLint("Range")
-fun getListOfFiles(
+fun getListOfFilesFromUri(
     contentResolver: ContentResolver,
     parentUri: Uri,
-    context: Context
+    context: Context,
+    folderPath: String
 ): List<FileItem> {
     val fileList = mutableListOf<FileItem>()
     val parentDocumentId = DocumentsContract.getTreeDocumentId(parentUri)
@@ -58,9 +51,27 @@ fun getListOfFiles(
             val childUri =
                 DocumentsContract.buildDocumentUriUsingTree(childrenUri, childDocumentId)
             val wholePath = URIPathHelper().getPath(context, childUri) ?: ""
-            val filePath = extractSubstring(wholePath, AppConstants.INTERNAL_STORAGE_PATH)
+            val filePath = extractSubstring(
+                wholePath,
+                AppConstants.INTERNAL_STORAGE_PATH + folderPath
+            ) //folderpath is main folder name
+            logE(BuddyServer.TAG, "File path : $filePath")
             fileList.add(FileItem(name = displayName, fileUri = childUri, filePath = filePath))
         }
+    }
+    return fileList
+}
+
+fun getListOfFilesFromPath(file: File, folderPath: String): List<FileItem> {
+    val fileList = mutableListOf<FileItem>()
+    val filesInFolder = file.listFiles()
+    filesInFolder?.forEach { f ->
+        val wholePath = f.path
+        val filePath = extractSubstring(wholePath, AppConstants.INTERNAL_STORAGE_PATH + folderPath)
+        logE(
+            BuddyServer.TAG, "Filepath for nested folder : $filePath"
+        )
+        fileList.add(FileItem(name = f.name, filePath = filePath))
     }
     return fileList
 }
