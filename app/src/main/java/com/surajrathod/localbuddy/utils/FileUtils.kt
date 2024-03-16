@@ -55,8 +55,18 @@ fun getListOfFilesFromUri(
                 wholePath,
                 AppConstants.INTERNAL_STORAGE_PATH + folderPath
             ) //folderpath is main folder name
+            val mimeType =
+                cursor.getString(cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE))
+            val isDirectory = mimeType == DocumentsContract.Document.MIME_TYPE_DIR
             logE(BuddyServer.TAG, "File path : $filePath")
-            fileList.add(FileItem(name = displayName, fileUri = childUri, filePath = filePath))
+            fileList.add(
+                FileItem(
+                    name = displayName,
+                    fileUri = childUri,
+                    filePath = filePath,
+                    isDirectory = isDirectory
+                )
+            )
         }
     }
     return fileList
@@ -71,7 +81,7 @@ fun getListOfFilesFromPath(file: File, folderPath: String): List<FileItem> {
         logE(
             BuddyServer.TAG, "Filepath for nested folder : $filePath"
         )
-        fileList.add(FileItem(name = f.name, filePath = filePath))
+        fileList.add(FileItem(name = f.name, filePath = filePath, isDirectory = f.isDirectory))
     }
     return fileList
 }

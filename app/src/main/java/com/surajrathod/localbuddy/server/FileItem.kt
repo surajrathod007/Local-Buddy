@@ -7,6 +7,7 @@ data class FileItem(
     val name: String,
     val fileUri: Uri? = null,
     val filePath: String,
+    val isDirectory: Boolean = false
 ) {
     fun generateHtmlString(): String {
         return """
@@ -16,6 +17,24 @@ data class FileItem(
             <a href="${BuddyServer.HOME_PREFIX}${getPath()}" class="download-btn">Download</a>
         </div>
     """.trimIndent()
+    }
+
+    fun generateModernHtml(): String {
+        return """
+            <a href="${BuddyServer.HOME_PREFIX}${getPath()}" class="file-link">
+            <li class="file-item">
+                ${
+            if (isDirectory) {
+                "<span class=\"file-icon\">📁</span>"
+            } else {
+                "<span class=\"file-icon\">\uD83D\uDCC4</span>"
+            }
+        }
+               
+                <p class="file-name">$name</p>
+            </li>
+        </a>
+        """.trimIndent()
     }
 
     // file path -> ApkEditor/CamScanner/classes2.dex where ApkEditor is parent folder selected by user

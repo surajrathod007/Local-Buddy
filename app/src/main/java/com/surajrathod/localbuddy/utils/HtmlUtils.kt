@@ -12,7 +12,7 @@ fun InputStream.htmlToString(): String {
 fun String.addFilesItemsToHtmlString(items: List<FileItem>): String {
     var myItemString = ""
     items.map { fileItem ->
-        myItemString += "\n${fileItem.generateHtmlString()}"
+        myItemString += "\n${fileItem.generateModernHtml()}"
     }
     return this.replace(AppConstants.ITEM_REPLACE_KEY, myItemString, true)
 }

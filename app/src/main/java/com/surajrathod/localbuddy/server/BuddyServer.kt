@@ -61,7 +61,7 @@ class BuddyServer(
             //hitting home -> just serve normal home page
             return try {
                 val mimeType = "text/html"
-                val inputStream: InputStream = context.resources.openRawResource(R.raw.index)
+                val inputStream: InputStream = context.resources.openRawResource(R.raw.latesthome)
                 val htmlString = inputStream.htmlToString()
                 val dummyItems =
                     getListOfFilesFromUri(context.contentResolver, folderUri, context, folderPath)
@@ -91,7 +91,8 @@ class BuddyServer(
                 //navigate with directory , what a pain
                 return try {
                     val mimeType = "text/html"
-                    val inputStream: InputStream = context.resources.openRawResource(R.raw.index)
+                    val inputStream: InputStream =
+                        context.resources.openRawResource(R.raw.latesthome)
                     val htmlString = inputStream.htmlToString()
                     val dummyItems = getListOfFilesFromPath(file, folderPath)
                     val newHtmlString = htmlString.addFilesItemsToHtmlString(dummyItems)
