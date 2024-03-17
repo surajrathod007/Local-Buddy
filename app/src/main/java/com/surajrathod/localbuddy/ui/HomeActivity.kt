@@ -10,8 +10,10 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.documentfile.provider.DocumentFile
+import com.surajrathod.localbuddy.R
 import com.surajrathod.localbuddy.databinding.ActivityMainBinding
 import com.surajrathod.localbuddy.extensions.logE
+import com.surajrathod.localbuddy.extensions.setStatusBarColor
 import com.surajrathod.localbuddy.server.BuddyServer
 import com.surajrathod.localbuddy.server.FileItem
 import com.surajrathod.localbuddy.utils.URIPathHelper
@@ -67,6 +69,7 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun init() {
+        setStatusBarColor(R.color.primary_bg_color)
         setupClickListeners()
     }
 
