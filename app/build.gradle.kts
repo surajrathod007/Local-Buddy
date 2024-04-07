@@ -69,6 +69,10 @@ dependencies {
     kapt("com.google.dagger:hilt-android-compiler:2.44")
 
     implementation( "org.nanohttpd:nanohttpd:2.2.0")
+
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    implementation("com.google.code.gson:gson:2.10.1")
 }
 
 
