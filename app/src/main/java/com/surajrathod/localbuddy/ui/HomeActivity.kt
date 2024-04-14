@@ -2,13 +2,16 @@ package com.surajrathod.localbuddy.ui
 
 import android.R.attr.data
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.documentfile.provider.DocumentFile
 import com.surajrathod.localbuddy.R
@@ -17,21 +20,29 @@ import com.surajrathod.localbuddy.extensions.logE
 import com.surajrathod.localbuddy.extensions.setStatusBarColor
 import com.surajrathod.localbuddy.server.BuddyServer
 import com.surajrathod.localbuddy.server.FileItem
+import com.surajrathod.localbuddy.ui.dialogs.FileUploadDialog
 import com.surajrathod.localbuddy.utils.URIPathHelper
+import dagger.hilt.android.AndroidEntryPoint
 import fi.iki.elonen.NanoHTTPD
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.Enumeration
 
 
+@AndroidEntryPoint
 class HomeActivity : AppCompatActivity() , BuddyServer.BuddyServerListener{
+
+
+    private val homeViewModel by viewModels<HomeViewModel>()
 
     companion object {
         const val TAG = "HomeActivity"
     }
 
-    private var progressDialog : ProgressDialog? = null
+    private var fileUploadDialog : FileUploadDialog? = null
 
 
     private lateinit var binding: ActivityMainBinding
@@ -74,6 +85,31 @@ class HomeActivity : AppCompatActivity() , BuddyServer.BuddyServerListener{
     private fun init() {
         setStatusBarColor(R.color.primary_bg_color)
         setupClickListeners()
+        setupObservers()
+    }
+
+    private fun setupObservers() {
+        homeViewModel.fileProgress.observe(this){progressText ->
+            logE("SURAJPROGRESS","$progressText")
+            if(progressText.isNotEmpty() && fileUploadDialog!=null){
+                fileUploadDialog?.setProgress(progressText)
+            }
+        }
+        homeViewModel.isProgressVisible.observe(this){
+            if(it){
+                if(fileUploadDialog==null){
+                    fileUploadDialog = FileUploadDialog()
+                    fileUploadDialog?.isCancelable = false
+                    fileUploadDialog?.show(supportFragmentManager,null)
+                }
+            }else{
+                if(fileUploadDialog!=null){
+                    fileUploadDialog?.dismiss()
+                    fileUploadDialog = null
+                    Toast.makeText(this,"File recieved successfully !",Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun setupClickListeners() {
@@ -154,22 +190,18 @@ class HomeActivity : AppCompatActivity() , BuddyServer.BuddyServerListener{
         return ""
     }
 
-    override fun onFileUploading(fileItem: org.apache.commons.fileupload.FileItem) {
-        /*if(progressDialog==null){
-            progressDialog = ProgressDialog(this)
-            progressDialog?.setTitle("File is downloading...")
-            progressDialog?.setCancelable(false)
-            progressDialog?.show()
-        }
-        logE("SURAJFILE","${fileItem.name}")
+    override fun onFileUploading() {
+        homeViewModel.setIsProgressVisible(true)
+/*        logE("SURAJFILE","${fileItem.name}")
         binding.txtLblFileUploading.text = "File uploaded : ${fileItem.name}"*/
     }
 
     override fun onFileUploading(pBytesRead: Long, pContentLength: Long, pItems: Int) {
-        /*if(pBytesRead==pContentLength){
-            progressDialog?.dismiss()
-            progressDialog = null
-        }*/
+        if(pBytesRead==pContentLength){
+            homeViewModel.setIsProgressVisible(false)
+        }
+        val percentComplete = ((pBytesRead.toDouble() /pContentLength.toDouble()) * 100).toInt()
+        homeViewModel.setFileProgress(percentComplete)
     }
 }
 

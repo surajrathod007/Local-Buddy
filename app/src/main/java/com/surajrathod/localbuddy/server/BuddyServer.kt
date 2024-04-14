@@ -45,7 +45,7 @@ class BuddyServer(
     private var mListener: BuddyServerListener? = null
 
     interface BuddyServerListener {
-        fun onFileUploading(fileItem: FileItem)
+        fun onFileUploading()
 
         fun onFileUploading(pBytesRead : Long, pContentLength : Long, pItems : Int)
     }
@@ -252,6 +252,7 @@ class BuddyServer(
 
 
     private fun handleUploadRequest(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        mListener?.onFileUploading()
         val filePath = extractSubstring(session.uri, UPLOAD_PREFIX)
         val fileUpload = NanoFileUpload(DiskFileItemFactory())
         fileUpload.setProgressListener { pBytesRead, pContentLength, pItems ->
@@ -262,7 +263,6 @@ class BuddyServer(
                 fileUpload.parseRequest(session)
             if(files.isNotEmpty()){
                 val firstFile = files[0]
-                mListener?.onFileUploading(firstFile)
                 if(filePath.isEmpty()){
                     //store file in parent folder
                     val file = File(AppConstants.INTERNAL_STORAGE_PATH + folderPath + firstFile.name)
