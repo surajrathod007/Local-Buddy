@@ -5,4 +5,6 @@ object AppConstants {
     const val ITEM_REPLACE_KEY = "{0}"
 
     const val INTERNAL_STORAGE_PATH = "/storage/emulated/0/"
+
+    const val UPLOAD_URL_KEY = "{1}"
 }

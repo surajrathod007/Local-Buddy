@@ -2,6 +2,7 @@ package com.surajrathod.localbuddy.ui
 
 import android.R.attr.data
 import android.app.Activity
+import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -24,14 +25,16 @@ import java.net.NetworkInterface
 import java.util.Enumeration
 
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : AppCompatActivity() , BuddyServer.BuddyServerListener{
 
     companion object {
         const val TAG = "HomeActivity"
     }
 
+    private var progressDialog : ProgressDialog? = null
 
-    lateinit var binding: ActivityMainBinding
+
+    private lateinit var binding: ActivityMainBinding
     private var folderUri: Uri? = null
 
     private var buddyServer: BuddyServer? = null
@@ -114,6 +117,7 @@ class HomeActivity : AppCompatActivity() {
         if (folderUri != null) {
             buddyServer?.stop()
             buddyServer = BuddyServer(8900, getLocalIpAddress(), this, folderUri!!)
+            buddyServer?.registerListener(this)
             try {
                 buddyServer?.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
                 logE(
@@ -148,6 +152,24 @@ class HomeActivity : AppCompatActivity() {
             e.printStackTrace()
         }
         return ""
+    }
+
+    override fun onFileUploading(fileItem: org.apache.commons.fileupload.FileItem) {
+        /*if(progressDialog==null){
+            progressDialog = ProgressDialog(this)
+            progressDialog?.setTitle("File is downloading...")
+            progressDialog?.setCancelable(false)
+            progressDialog?.show()
+        }
+        logE("SURAJFILE","${fileItem.name}")
+        binding.txtLblFileUploading.text = "File uploaded : ${fileItem.name}"*/
+    }
+
+    override fun onFileUploading(pBytesRead: Long, pContentLength: Long, pItems: Int) {
+        /*if(pBytesRead==pContentLength){
+            progressDialog?.dismiss()
+            progressDialog = null
+        }*/
     }
 }
 

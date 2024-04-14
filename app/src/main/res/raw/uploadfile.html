@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>File Upload</title>
+    </head>
+    <body>
+        <h2>Select a file to upload</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="filename" accept=".txt">
+            <button type="button" onclick="uploadFile()">Upload File</button>
+        </form>
+
+        <script>
+            function uploadFile() {
+                var fileInput = document.getElementById('fileInput');
+                var file = fileInput.files[0];
+
+                if (!file) {
+                    alert("Please select a file.");
+                    return;
+                }
+
+                var formData = new FormData();
+                formData.append('filename', file);
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '{1}', true);
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        alert("File uploaded successfully!");
+                    } else {
+                        alert("Error uploading file: " + xhr.statusText);
+                    }
+                };
+                xhr.onerror = function () {
+                    alert("Error uploading file.");
+                };
+                xhr.send(formData);
+            }
+        </script>
+    </body>
+</html>

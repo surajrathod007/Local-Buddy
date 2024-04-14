@@ -73,6 +73,10 @@ dependencies {
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     implementation("com.google.code.gson:gson:2.10.1")
+
+    //for file uploading
+    implementation("org.nanohttpd:nanohttpd-apache-fileupload:2.3.1")
+    implementation("javax.servlet:javax.servlet-api:4.0.1")
 }
 
 

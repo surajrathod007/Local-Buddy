@@ -2,75 +2,209 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0">
         <title>Dark File Manager</title>
         <style>
-    body {
-        background-color: #1e2142;
-        color: #e0e0e0;
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-    }
+            body {
+                background-color: #1e2142;
+                color: #e0e0e0;
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
 
-    .file-manager {
-        margin: 20px;
-        padding: 20px;
-        background-color: #24284c;
-        border-radius: 5px;
-        /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); */
-    }
+            .file-manager {
+                margin: 20px;
+                padding: 20px;
+                background-color: #24284c;
+                border-radius: 5px;
+                /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); */
+            }
 
-    .title {
-        text-align: left;
-        margin-bottom: 20px;
-        margin-left: 20px;
-        font-size: 24px;
-    }
+            .title {
+                text-align: left;
+                font-size: 24px;
+            }
 
-    .file-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        grid-gap: 20px;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
+            .header-container {
+                display: flex;
+                justify-content: space-between; /* Items are spaced evenly */
+                align-items: center; /* Items are vertically centered */
+                margin-bottom: 20px;
+                margin-left: 20px;
+                margin-right: 20px;
+            }
 
-    .file-item {
-        padding: 10px;
-       /* border: 1px solid #ffffff; */
-        border-radius: 5px;
-        text-align: center;
-        transition: background-color 0.5s ease;
-    }
 
-    .file-item:hover {
-        background-color: #7B62FF;
-    }
+            .file-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-gap: 20px;
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
 
-    .file-link {
-        text-decoration: none;
-        color: inherit;
-    }
+            .file-item {
+                padding: 10px;
+               /* border: 1px solid #ffffff; */
+                border-radius: 5px;
+                text-align: center;
+                transition: background-color 0.5s ease;
+            }
 
-    .file-icon {
-        font-size: 48px;
-        margin-bottom: 10px;
-    }
+            .file-item:hover {
+                background-color: #7B62FF;
+            }
 
-    .file-name {
-        margin: 0;
-        font-size: 16px;
-    }
-</style>
+            .file-link {
+                text-decoration: none;
+                color: inherit;
+            }
+
+            .file-icon {
+                font-size: 48px;
+                margin-bottom: 10px;
+            }
+
+            .file-name {
+                margin: 0;
+                font-size: 16px;
+            }
+        </style>
     </head>
     <body>
-        <h1 class="title">Http File Manager</h1>
+        <!-- Container div -->
+        <div class="header-container">
+            <!-- Title -->
+            <h1 class="title">Http File Manager</h1>
+            <!-- Button -->
+            <button id="showDialog">Upload File</button>
+        </div>
         <div class="file-manager">
             <ul class="file-grid">
                 {0}
             </ul>
         </div>
+        <!-- A modal dialog containing a form -->
+        <dialog id="favDialog">
+            <form>
+                <input type="file" id="fileInput" name="filename">
+                <p id="txtUpload"></p>
+                <div>
+                    <button
+                            value="cancel"
+                            formmethod="dialog" onclick="clearAllSelection()">Cancel
+                    </button>
+                    <button type="button" onclick="uploadFile()">Upload File</button>
+                </div>
+            </form>
+        </dialog>
+        <output></output>
+
     </body>
+
+    <script>
+
+
+        var currentPageUrl = window.location.href+"/";
+        console.log("Current page URL:", currentPageUrl);
+
+        const showButton = document.getElementById("showDialog");
+        const favDialog = document.getElementById("favDialog");
+        const outputBox = document.querySelector("output");
+        const selectEl = favDialog.querySelector("select");
+        const confirmBtn = favDialog.querySelector("#confirmBtn");
+        const txtLblUpload = document.getElementById("txtUpload");
+
+        const uploadUrl = extractBeforeHome(currentPageUrl)+"/upload/"+extractAfterHome(currentPageUrl)
+        console.log("Current page Upload Url:", uploadUrl);
+
+// "Show the dialog" button opens the <dialog> modally
+showButton.addEventListener("click", () => {
+  favDialog.showModal();
+});
+
+
+
+
+        function uploadFile() {
+                var fileInput = document.getElementById('fileInput');
+                var file = fileInput.files[0];
+
+                if (!file) {
+                    alert("Please select a file.");
+                    return;
+                }
+
+                var formData = new FormData();
+                formData.append('filename', file);
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', uploadUrl, true);
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        alert("File uploaded successfully!");
+                        txtLblUpload.textContent = "";
+                    } else {
+                        alert("Error uploading file: " + xhr.statusText);
+                        clearFileSelection()
+                           txtLblUpload.textContent = "";
+                    }
+                };
+                xhr.onerror = function () {
+                    clearFileSelection()
+                    txtLblUpload.textContent = "";
+                    alert("Error uploading file.");
+                };
+                // Track upload progress
+                 xhr.upload.addEventListener("progress", function(event) {
+                      if (event.lengthComputable) {
+                        var percentComplete = (event.loaded / event.total) * 100;
+
+                   txtLblUpload.textContent = "Uploading :"+percentComplete.toFixed(2) + "%";
+                console.log("Upload progress: " + percentComplete.toFixed(2) + "%");
+            // Update progress UI here
+        }
+    });
+                xhr.send(formData);
+            }
+
+
+            function extractAfterHome(url) {
+    // Regular expression to match the substring after "home/"
+    var regex = /\/home\/(.*)/i;
+    var match = url.match(regex);
+    if (match) {
+        // If a match is found, return the substring after "home/"
+        return match[1];
+    }
+    return null; // Return null if "home/" is not found
+}
+
+
+        function extractBeforeHome(url) {
+    // Regular expression to match the substring before "/home/"
+    var regex = /^(.*?\/\/.*?)(?=\/home\/)/i;
+    var match = url.match(regex);
+    if (match) {
+        // If a match is found, return the substring before "/home/"
+        return match[1];
+    }
+    return null; // Return null if "/home/" is not found
+}
+
+        function clearFileSelection() {
+    var fileInput = document.getElementById("fileInput");
+    // Clear the file selection by setting its value to an empty string
+    fileInput.value = "";
+}
+
+        function clearAllSelection(){
+            clearFileSelection()
+            txtLblUpload.textContent = "";
+        }
+    </script>
 </html>

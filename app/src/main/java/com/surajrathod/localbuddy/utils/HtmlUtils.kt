@@ -17,6 +17,10 @@ fun String.addFilesItemsToHtmlString(items: List<FileItem>): String {
     return this.replace(AppConstants.ITEM_REPLACE_KEY, myItemString, true)
 }
 
+fun String.addUploadUrlToHtmlString(url : String) : String{
+    return this.replace(AppConstants.UPLOAD_URL_KEY,url,true)
+}
+
 fun generateDummyItems(): List<FileItem> {
     val dummyItems = mutableListOf<FileItem>()
 

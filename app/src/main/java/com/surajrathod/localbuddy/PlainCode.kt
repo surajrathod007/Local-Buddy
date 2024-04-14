@@ -1,6 +1,7 @@
 package com.surajrathod.localbuddy
 
 import com.surajrathod.localbuddy.server.BuddyServer
+import fi.iki.elonen.NanoHTTPD
 import java.net.URLEncoder
 
 fun main() {
@@ -8,6 +9,26 @@ fun main() {
     val substring = extractSubstring(inputString)
     val finalString = BuddyServer.PRIMARY_PATH+URLEncoder.encode(substring)
     println(finalString)
+
+    val urlTest = "/uploadtest"
+    val u = "/upload"
+    val uri = urlTest
+
+    println(urlTest.contains("/upload"))
+    when {
+        uri.startsWith("/hello") -> {}
+        uri.startsWith("/home") -> {}
+        uri.startsWith("/download") -> {}
+        uri.startsWith("/upload") -> {
+            println("Upload")
+        }
+        uri.startsWith("/uploadtest") -> {
+            println("Upload test")
+        }
+        else -> {
+
+        }
+    }
 }
 
 fun extractSubstring(inputString: String): String {
