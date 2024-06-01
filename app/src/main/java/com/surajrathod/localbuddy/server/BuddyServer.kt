@@ -48,6 +48,9 @@ class BuddyServer(
         fun onFileUploading()
 
         fun onFileUploading(pBytesRead : Long, pContentLength : Long, pItems : Int)
+
+        fun onFileUploaded(file: File)
+
     }
 
     fun registerListener(buddyServerListener: BuddyServerListener) {
@@ -253,24 +256,28 @@ class BuddyServer(
 
     private fun handleUploadRequest(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
         mListener?.onFileUploading()
+
         val filePath = extractSubstring(session.uri, UPLOAD_PREFIX)
         val fileUpload = NanoFileUpload(DiskFileItemFactory())
+
         fileUpload.setProgressListener { pBytesRead, pContentLength, pItems ->
             mListener?.onFileUploading(pBytesRead, pContentLength, pItems)
         }
         return try {
             val files: MutableList<FileItem> =
                 fileUpload.parseRequest(session)
+            val firstFile = files[0]
             if(files.isNotEmpty()){
-                val firstFile = files[0]
                 if(filePath.isEmpty()){
                     //store file in parent folder
                     val file = File(AppConstants.INTERNAL_STORAGE_PATH + folderPath + firstFile.name)
                     firstFile.write(file)
+                    mListener?.onFileUploaded(file)
                 }else{
                     //store file in sub folder
                     val file = File(AppConstants.INTERNAL_STORAGE_PATH + folderPath + filePath + firstFile.name)
                     firstFile.write(file)
+                    mListener?.onFileUploaded(file)
                 }
             }
             newFixedLengthResponse(
@@ -285,6 +292,9 @@ class BuddyServer(
             throw IllegalArgumentException("Could not handle files from API request", e)
         }
     }
+
+
+
 
 
 }

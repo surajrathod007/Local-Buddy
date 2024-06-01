@@ -1,19 +1,17 @@
 package com.surajrathod.localbuddy.ui
 
-import android.R.attr.data
 import android.app.Activity
-import android.app.AlertDialog
-import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.View
+import android.os.StrictMode
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.lifecycleScope
 import com.surajrathod.localbuddy.R
 import com.surajrathod.localbuddy.databinding.ActivityMainBinding
 import com.surajrathod.localbuddy.extensions.logE
@@ -21,19 +19,20 @@ import com.surajrathod.localbuddy.extensions.setStatusBarColor
 import com.surajrathod.localbuddy.server.BuddyServer
 import com.surajrathod.localbuddy.server.FileItem
 import com.surajrathod.localbuddy.ui.dialogs.FileUploadDialog
-import com.surajrathod.localbuddy.utils.URIPathHelper
 import dagger.hilt.android.AndroidEntryPoint
 import fi.iki.elonen.NanoHTTPD
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.io.File
 import java.io.IOException
+import java.lang.reflect.Method
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.Enumeration
 
 
 @AndroidEntryPoint
-class HomeActivity : AppCompatActivity() , BuddyServer.BuddyServerListener{
+class HomeActivity : AppCompatActivity(), BuddyServer.BuddyServerListener {
 
 
     private val homeViewModel by viewModels<HomeViewModel>()
@@ -42,13 +41,15 @@ class HomeActivity : AppCompatActivity() , BuddyServer.BuddyServerListener{
         const val TAG = "HomeActivity"
     }
 
-    private var fileUploadDialog : FileUploadDialog? = null
+    private var fileUploadDialog: FileUploadDialog? = null
 
 
     private lateinit var binding: ActivityMainBinding
     private var folderUri: Uri? = null
 
     private var buddyServer: BuddyServer? = null
+
+    private var receivedFile: File? = null
 
     private val directoryPickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -89,25 +90,27 @@ class HomeActivity : AppCompatActivity() , BuddyServer.BuddyServerListener{
     }
 
     private fun setupObservers() {
-        homeViewModel.fileProgress.observe(this){progressText ->
-            logE("SURAJPROGRESS","$progressText")
-            if(progressText.isNotEmpty() && fileUploadDialog!=null){
+        homeViewModel.fileProgress.observe(this) { progressText ->
+            logE("SURAJPROGRESS", "$progressText")
+            if (progressText.isNotEmpty() && fileUploadDialog != null) {
                 fileUploadDialog?.setProgress(progressText)
             }
         }
-        homeViewModel.isProgressVisible.observe(this){
-            if(it){
-                if(fileUploadDialog==null){
-                    fileUploadDialog = FileUploadDialog()
-                    fileUploadDialog?.isCancelable = false
-                    fileUploadDialog?.show(supportFragmentManager,null)
+        homeViewModel.isProgressVisible.observe(this) {
+            if (it) {
+                fileUploadDialog?.dismiss()
+                fileUploadDialog = FileUploadDialog() {
+                    receivedFile?.let { it1 -> openDirectoryWithFileManager(it1) }
                 }
-            }else{
-                if(fileUploadDialog!=null){
+                fileUploadDialog?.isCancelable = false
+                fileUploadDialog?.show(supportFragmentManager, null)
+
+            } else {
+                /*if(fileUploadDialog!=null){
                     fileUploadDialog?.dismiss()
                     fileUploadDialog = null
                     Toast.makeText(this,"File recieved successfully !",Toast.LENGTH_SHORT).show()
-                }
+                }*/
             }
         }
     }
@@ -191,18 +194,56 @@ class HomeActivity : AppCompatActivity() , BuddyServer.BuddyServerListener{
     }
 
     override fun onFileUploading() {
+        receivedFile = null
         homeViewModel.setIsProgressVisible(true)
-/*        logE("SURAJFILE","${fileItem.name}")
-        binding.txtLblFileUploading.text = "File uploaded : ${fileItem.name}"*/
     }
 
     override fun onFileUploading(pBytesRead: Long, pContentLength: Long, pItems: Int) {
-        if(pBytesRead==pContentLength){
-            homeViewModel.setIsProgressVisible(false)
-        }
-        val percentComplete = ((pBytesRead.toDouble() /pContentLength.toDouble()) * 100).toInt()
+        val percentComplete = ((pBytesRead.toDouble() / pContentLength.toDouble()) * 100).toInt()
         homeViewModel.setFileProgress(percentComplete)
     }
+
+    override fun onFileUploaded(file: File) {
+        lifecycleScope.launch {
+            delay(1000)
+            fileUploadDialog?.notifyFileReceived()
+            receivedFile = file
+        }
+    }
+
+    private fun openDirectoryWithFileManager(file: File) {
+
+        if (Build.VERSION.SDK_INT >= 24) {
+            try {
+                val m: Method = StrictMode::class.java.getMethod("disableDeathOnFileUriExposure")
+                m.invoke(null)
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+            }
+        }
+        // Define your internal storage path and folder path
+
+
+        // Convert the directory to a Uri
+        val uri = Uri.parse("file://$file")
+
+        // Create an intent to view the directory
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            //setDataAndType(uri, "resource/folder")
+            setDataAndType(uri, "*/*")
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        }
+
+        // Check if there's an app that can handle this intent
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+        } else {
+            // Handle the case where no file manager app is available
+            println("No file manager app found to open the directory.")
+        }
+
+    }
+
 }
 
 
