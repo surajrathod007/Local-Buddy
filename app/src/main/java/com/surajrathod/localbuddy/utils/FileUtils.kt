@@ -32,6 +32,11 @@ fun MBToBytes(mb: Double): Long {
 }
 
 
+fun getListOfFileFromFile(context: Context,file: File){
+    val fileList = mutableListOf<FileItem>()
+}
+
+
 @SuppressLint("Range")
 fun getListOfFilesFromUri(
     contentResolver: ContentResolver,
@@ -71,6 +76,18 @@ fun getListOfFilesFromUri(
     }
     return fileList
 }
+
+fun getListOfFileFromFile(file: File): List<FileItem>{
+    val fileList = mutableListOf<FileItem>()
+    val filesInFolder = file.listFiles()
+    filesInFolder?.forEach { f ->
+        val wholePath = f.path
+        val filePath = extractSubstring(wholePath, AppConstants.INTERNAL_STORAGE_PATH)
+        fileList.add(FileItem(name = f.name, filePath = filePath, isDirectory = f.isDirectory))
+    }
+    return fileList
+}
+
 
 fun getListOfFilesFromPath(file: File, folderPath: String): List<FileItem> {
     val fileList = mutableListOf<FileItem>()

@@ -11,6 +11,7 @@ import com.surajrathod.localbuddy.utils.URIPathHelper
 import com.surajrathod.localbuddy.utils.addFilesItemsToHtmlString
 import com.surajrathod.localbuddy.utils.addUploadUrlToHtmlString
 import com.surajrathod.localbuddy.utils.extractSubstring
+import com.surajrathod.localbuddy.utils.getListOfFileFromFile
 import com.surajrathod.localbuddy.utils.getListOfFilesFromPath
 import com.surajrathod.localbuddy.utils.getListOfFilesFromUri
 import com.surajrathod.localbuddy.utils.htmlToString
@@ -50,6 +51,8 @@ class BuddyServer(
         fun onFileUploading(pBytesRead : Long, pContentLength : Long, pItems : Int)
 
         fun onFileUploaded(file: File)
+
+        fun onError(exception: Exception)
 
     }
 
@@ -135,8 +138,8 @@ class BuddyServer(
                 var htmlString = inputStream.htmlToString()
                 val uploadUrl = "http://${hostName}:${listeningPort}/upload"
                 htmlString = htmlString.addUploadUrlToHtmlString(uploadUrl) //adding upload functionality
-                val dummyItems =
-                    getListOfFilesFromUri(context.contentResolver, folderUri, context, folderPath)
+                //val dummyItems = getListOfFilesFromUri(context.contentResolver, folderUri, context, folderPath)
+                val dummyItems = getListOfFileFromFile(file = File(AppConstants.INTERNAL_STORAGE_PATH))
                 htmlString = htmlString.addFilesItemsToHtmlString(dummyItems)   //adding dynamic files
                 val modifiedInputStream: InputStream = ByteArrayInputStream(
                     htmlString.toByteArray(Charset.defaultCharset())
@@ -157,7 +160,7 @@ class BuddyServer(
 
 
     private fun handleContents(filePath: String): Response {
-        val file = File(AppConstants.INTERNAL_STORAGE_PATH + folderPath + filePath)
+        val file = File(AppConstants.INTERNAL_STORAGE_PATH + filePath)
         if (file.exists()) {
             if (file.isDirectory) {
                 //navigate with directory , what a pain
@@ -166,7 +169,8 @@ class BuddyServer(
                     val inputStream: InputStream =
                         context.resources.openRawResource(R.raw.latesthome)
                     val htmlString = inputStream.htmlToString()
-                    val dummyItems = getListOfFilesFromPath(file, folderPath)
+                    //val dummyItems = getListOfFilesFromPath(file, folderPath)
+                    val dummyItems = getListOfFileFromFile(file)
                     val newHtmlString = htmlString.addFilesItemsToHtmlString(dummyItems)
                     val modifiedInputStream: InputStream = ByteArrayInputStream(
                         newHtmlString.toByteArray(Charset.defaultCharset())
@@ -285,9 +289,11 @@ class BuddyServer(
                 "Uploaded files " + " out of " + files.size
             )
         } catch (e: IOException) {
+            mListener?.onError(e)
             e.printStackTrace()
             throw IllegalArgumentException("Could not handle files from API request", e)
         } catch (e: FileUploadException) {
+            mListener?.onError(e)
             e.printStackTrace()
             throw IllegalArgumentException("Could not handle files from API request", e)
         }

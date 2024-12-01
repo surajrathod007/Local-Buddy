@@ -1,11 +1,14 @@
 package com.surajrathod.localbuddy.ui
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.StrictMode
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -50,6 +53,7 @@ class HomeActivity : AppCompatActivity(), BuddyServer.BuddyServerListener {
     private var buddyServer: BuddyServer? = null
 
     private var receivedFile: File? = null
+    private var isServerRunning = false
 
     private val directoryPickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -115,16 +119,58 @@ class HomeActivity : AppCompatActivity(), BuddyServer.BuddyServerListener {
         }
     }
 
+
+    private fun updateButtonState() {
+        if (isServerRunning) {
+            binding.btnStartServer.text = "Stop server"
+        } else {
+            binding.btnStartServer.text = "Start server"
+        }
+    }
+
     private fun setupClickListeners() {
         binding.btnStartServer.setOnClickListener {
-            if (folderUri != null) {
-                startServer()
+            if (!isServerRunning) {
+                if (folderUri != null) {
+                    isServerRunning = true;
+                    startServer()
+                } else {
+                    Toast.makeText(this, "Please select a folder ", Toast.LENGTH_SHORT).show()
+                }
             } else {
-                Toast.makeText(this, "Please select a folder ", Toast.LENGTH_SHORT).show()
+                isServerRunning = false
+                buddyServer?.stop()
             }
+            updateButtonState()
         }
         binding.btnChooseDirectory.setOnClickListener {
             openDirectoryPicker()
+        }
+        binding.btnGetAllFiles.setOnClickListener {
+            getAllFiles(this)
+        }
+    }
+
+    fun listFiles(directory: File): List<String> {
+        val allFiles = mutableListOf<String>()
+        directory.listFiles()?.forEach { file ->
+            allFiles.add(file.absolutePath)
+        }
+        return allFiles
+    }
+
+    fun getAllFiles(context: Context) {
+        if (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Environment.isExternalStorageManager()
+            } else {
+                TODO("VERSION.SDK_INT < R")
+            }
+        ) {
+            val root = File(Environment.getExternalStorageDirectory().absolutePath)
+            val allFiles = listFiles(root)
+            allFiles.forEach { Log.d("FileList", it) }
+        } else {
+            Log.e("Permission", "MANAGE_EXTERNAL_STORAGE permission is not granted")
         }
     }
 
@@ -209,6 +255,10 @@ class HomeActivity : AppCompatActivity(), BuddyServer.BuddyServerListener {
             fileUploadDialog?.notifyFileReceived()
             receivedFile = file
         }
+    }
+
+    override fun onError(exception: Exception) {
+        fileUploadDialog?.dismiss()
     }
 
     private fun openDirectoryWithFileManager(file: File) {
